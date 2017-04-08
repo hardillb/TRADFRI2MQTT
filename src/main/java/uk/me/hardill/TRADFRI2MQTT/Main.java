@@ -59,7 +59,7 @@ public class Main {
 	
 	private HashMap<String, Integer> name2id = new HashMap<>();
 	
-	Main(String psk, String ip) {
+	Main(String psk, String ip, String broker) {
 		this.ip = ip;
 		DtlsConnectorConfig.Builder builder = new DtlsConnectorConfig.Builder(new InetSocketAddress(0));
 		builder.setPskStore(new StaticPskStore("", psk.getBytes()));
@@ -68,7 +68,7 @@ public class Main {
 		
 		MemoryPersistence persistence = new MemoryPersistence();
 		try {
-			mqttClient = new MqttClient("tcp://localhost", MqttClient.generateClientId(), persistence);
+			mqttClient = new MqttClient(broker, MqttClient.generateClientId(), persistence);
 			mqttClient.connect();
 			mqttClient.setCallback(new MqttCallback() {
 				
@@ -252,7 +252,7 @@ public class Main {
 			System.exit(1);
 		}
 
-		Main m = new Main(psk, ip);
+		Main m = new Main(psk, ip, broker);
 		m.discover();
 	}
 
