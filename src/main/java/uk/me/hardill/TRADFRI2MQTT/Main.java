@@ -89,14 +89,12 @@ public class Main {
 						json.put("3311", array);
 						if (command.equals("dim")) {
 							settings.put("5851", Integer.parseInt(message.toString()));
-							settings.put("5712", 3);	
+							settings.put("5712", 3);	// second transition
 						} else if (command.equals("on")) {
 							if (message.toString().equals("0")) {
 								settings.put("5850", 0);
-								//settings.put("5851", 0);
 							} else {
 								settings.put("5850", 1);
-								//settings.put("5851", 128);
 							}
 						}
 						String payload = json.toString();
