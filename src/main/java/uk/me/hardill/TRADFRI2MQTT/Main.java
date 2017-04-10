@@ -175,6 +175,7 @@ public class Main {
 				@Override
 				public void onLoad(CoapResponse response) {
 					System.out.println(response.getResponseText());
+					System.out.println(response.getOptions().toString());
 					try {
 						JSONObject json = new JSONObject(response.getResponseText());
 						if (json.has("3311")){
