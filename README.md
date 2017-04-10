@@ -17,3 +17,4 @@ Subscribes to control messages on topics like this:
 publish 0/1 to the `on` topic to turn the light off/on respectively
 
 publish 0-254 to the `dim` topic to change the brightness
+
