@@ -10,9 +10,7 @@ import java.util.HashMap;
 import java.util.Vector;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -25,7 +23,6 @@ import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapHandler;
 import org.eclipse.californium.core.CoapObserveRelation;
 import org.eclipse.californium.core.CoapResponse;
-import org.eclipse.californium.core.Utils;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.network.CoapEndpoint;
 import org.eclipse.californium.core.network.config.NetworkConfig;
@@ -197,6 +194,9 @@ public class Main {
 					System.out.println(response.getOptions().toString());
 					try {
 						JSONObject json = new JSONObject(response.getResponseText());
+						//TODO change this test to someting based on 5750 values
+						// 2 = light?
+						// 0 = remote/dimmer?
 						if (json.has("3311")){
 							MqttMessage message = new MqttMessage();
 							int state = json.getJSONArray("3311").getJSONObject(0).getInt("5850");
