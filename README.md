@@ -1,4 +1,4 @@
-java -jar TRADFRI2MQTT-0.0.1-SNAPSHOT.jar -ip <gateway ip> -psk <gateway secret> -broker <mqtt broker url>
+java -jar TRADFRI2MQTT-0.0.1-SNAPSHOT.jar -ip [gateway ip] -psk [gateway secret] -broker [mqtt broker url]
 
 e.g.
 

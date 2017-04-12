@@ -7,6 +7,11 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.Vector;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import org.apache.commons.cli.CommandLine;
@@ -58,6 +63,7 @@ public class Main {
 	private String ip;
 	
 	private HashMap<String, Integer> name2id = new HashMap<>();
+	private Vector<CoapObserveRelation> watching = new Vector<>();
 	
 	Main(String psk, String ip, String broker) {
 		this.ip = ip;
@@ -119,6 +125,19 @@ public class Main {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+		Runnable command = new Runnable() {
+			
+			@Override
+			public void run() {
+				System.out.println("re-reg");
+				for(CoapObserveRelation rel: watching) {
+					rel.reregister();
+				}
+			}
+		};
+		executor.scheduleAtFixedRate(command, 120, 120, TimeUnit.SECONDS);
 	}
 	
 	private void discover() {
@@ -214,6 +233,7 @@ public class Main {
 				}
 			};
 			CoapObserveRelation relation = client.observe(handler);
+			watching.add(relation);
 			
 			
 		} catch (URISyntaxException e) {
