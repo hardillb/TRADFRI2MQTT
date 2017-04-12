@@ -80,28 +80,45 @@ public class Main {
 					// TODO Auto-generated method stub
 					System.out.println(topic + " " + message.toString());
 					String parts[] = topic.split("/");
-					int id = name2id.get(parts[1]);
+					boolean bulb = parts[1].equals("bulb");
+					int id = name2id.get(parts[2]);
+					
 					System.out.println(id);
-					String command = parts[3];
+					String command = parts[4];
 					System.out.println(command);
 					try{
 						JSONObject json = new JSONObject();
-						JSONObject settings = new JSONObject();
-						JSONArray array = new JSONArray();
-						array.put(settings);
-						json.put("3311", array);
-						if (command.equals("dim")) {
-							settings.put("5851", Integer.parseInt(message.toString()));
-							settings.put("5712", 3);	// second transition
-						} else if (command.equals("on")) {
-							if (message.toString().equals("0")) {
-								settings.put("5850", 0);
-							} else {
-								settings.put("5850", 1);
+						if (bulb) {
+							JSONObject settings = new JSONObject();
+							JSONArray array = new JSONArray();
+							array.put(settings);
+							json.put("3311", array);
+							if (command.equals("dim")) {
+								settings.put("5851", Integer.parseInt(message.toString()));
+								settings.put("5712", 3);	// second transition
+							} else if (command.equals("on")) {
+								if (message.toString().equals("0")) {
+									settings.put("5850", 0);
+								} else {
+									settings.put("5850", 1);
+								}
 							}
+							String payload = json.toString();
+							Main.this.set("coaps://" + ip + "//15001/" + id, payload);
+						} else {
+							if (command.equals("dim")) {
+								json.put("5851", Integer.parseInt(message.toString()));
+								json.put("5712", 3);
+							} else {
+								if (message.toString().equals("0")) {
+									json.put("5850", 0);
+								} else {
+									json.put("5850", 1);
+								}
+							}
+							String payload = json.toString();
+							Main.this.set("coaps://" + ip + "//15004/" + id, payload);
 						}
-						String payload = json.toString();
-						Main.this.set("coaps://" + ip + "//15001/" + id, payload);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -117,7 +134,8 @@ public class Main {
 					// TODO Auto-generated method stub
 				}
 			});
-			mqttClient.subscribe("TRÅDFRI/+/control/+");
+			mqttClient.subscribe("TRÅDFRI/bulb/+/control/+");
+			mqttClient.subscribe("TRÅDFRI/room/+/control/+");
 		} catch (MqttException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -138,6 +156,7 @@ public class Main {
 	}
 	
 	private void discover() {
+		//bulbs
 		try {
 			URI uri = new URI("coaps://" + ip + "//15001");
 			CoapClient client = new CoapClient(uri);
@@ -146,6 +165,25 @@ public class Main {
 			JSONArray array = new JSONArray(response.getResponseText());
 			for (int i=0; i<array.length(); i++) {
 				String devUri = "coaps://"+ ip + "//15001/" + array.getInt(i);
+				this.watch(devUri);
+			}
+			client.shutdown();
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		try {
+			URI uri = new URI("coaps://" + ip + "//15004");
+			CoapClient client = new CoapClient(uri);
+			client.setEndpoint(endPoint);
+			CoapResponse response = client.get();
+			JSONArray array = new JSONArray(response.getResponseText());
+			for (int i=0; i<array.length(); i++) {
+				String devUri = "coaps://"+ ip + "//15004/" + array.getInt(i);
 				this.watch(devUri);
 			}
 			client.shutdown();
@@ -197,18 +235,38 @@ public class Main {
 						//TODO change this test to someting based on 5750 values
 						// 2 = light?
 						// 0 = remote/dimmer?
-						if (json.has("3311")){
+						if (json.has("3311") && (json.has("5750") && json.getInt("5750") == 2)){
 							MqttMessage message = new MqttMessage();
 							int state = json.getJSONArray("3311").getJSONObject(0).getInt("5850");
 							message.setPayload(Integer.toString(state).getBytes());
-							message.setRetained(true);
-							String topic = "TRÅDFRI/" + json.getString("9001") + "/state/on";
-							String topic2 = "TRÅDFRI/" + json.getString("9001") + "/state/dim";
+//							message.setRetained(true);
+							String topic = "TRÅDFRI/bulb/" + json.getString("9001") + "/state/on";
+							String topic2 = "TRÅDFRI/bulb/" + json.getString("9001") + "/state/dim";
 							name2id.put(json.getString("9001"), json.getInt("9003"));
 							MqttMessage message2 = new MqttMessage();
 							int dim = json.getJSONArray("3311").getJSONObject(0).getInt("5851");
 							message2.setPayload(Integer.toString(dim).getBytes());
-							message2.setRetained(true);
+//							message2.setRetained(true);
+							try {
+								mqttClient.publish(topic, message);
+								mqttClient.publish(topic2, message2);
+							} catch (MqttException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						} else if (json.has("9018")) {
+							//room?
+							System.out.println("room");
+							name2id.put(json.getString("9001"), json.getInt("9003"));
+							MqttMessage message = new MqttMessage();
+							int state = json.getInt("5850");
+							message.setPayload(Integer.toString(state).getBytes());
+							String topic = "TRÅDFRI/room/" + json.getString("9001") + "/state/on";
+							String topic2 = "TRÅDFRI/room/" + json.getString("9001") + "/state/dim";
+							MqttMessage message2 = new MqttMessage();
+							int dim = json.getInt("5851");
+							message2.setPayload(Integer.toString(dim).getBytes());
+							
 							try {
 								mqttClient.publish(topic, message);
 								mqttClient.publish(topic2, message2);
