@@ -121,7 +121,7 @@ public class Main {
 								}
 							}
 							String payload = json.toString();
-							Main.this.set("coaps://" + ip + "//" + DEVICES + "/" + id, payload);
+							Main.this.set("coaps://" + Main.this.ip + "//" + DEVICES + "/" + id, payload);
 						} else { // whole group
 							if (command.equals("dim")) {
 								json.put(DIMMER, Integer.parseInt(message.toString()));
@@ -134,7 +134,7 @@ public class Main {
 								}
 							}
 							String payload = json.toString();
-							Main.this.set("coaps://" + ip + "//" + GROUPS + "/" + id, payload);
+							Main.this.set("coaps://" + Main.this.ip + "//" + GROUPS + "/" + id, payload);
 						}
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -276,15 +276,20 @@ public class Main {
 							message2.setPayload(Integer.toString(dim).getBytes());
 //							message2.setRetained(true);
 
-							MqttMessage message3 = new MqttMessage();
-							String temperature = json.getJSONArray(LIGHT).getJSONObject(0).getString(COLOR);
-							message3.setPayload(temperature.getBytes());
-//							message3.setRetained(true);
+							MqttMessage message3 = null;
+							if (json.getJSONArray(LIGHT).getJSONObject(0).has(COLOR)) {
+								message3 = new MqttMessage();
+								String temperature = json.getJSONArray(LIGHT).getJSONObject(0).getString(COLOR);
+								message3.setPayload(temperature.getBytes());
+//								message3.setRetained(true);
+							}
 
 							try {
 								mqttClient.publish(topic, message);
 								mqttClient.publish(topic2, message2);
-								mqttClient.publish(topic3, message3);
+								if (message3 != null) {
+									mqttClient.publish(topic3, message3);
+								}
 							} catch (MqttException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
