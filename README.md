@@ -1,3 +1,5 @@
+# Invocation
+
 java -jar TRADFRI2MQTT-0.0.2-SNAPSHOT.jar -ip [gateway ip] -psk [gateway secret] -broker [mqtt broker url]
 
 e.g.
@@ -26,3 +28,13 @@ publish 0/1 to the `on` topic to turn the light off/on respectively
 publish 0-254 to the `dim` topic to change the brightness
 
 publish "cold" / "normal" / "warm" to the `color` topic to change colors. this only works on bulbs
+
+# MQTT broker example
+An easy-to-use MQTT broker is [mosquitto](https://mosquitto.org/).
+
+After installation run it locally with `mosquitto`.
+
+Then submit commands like this:
+`mosquitto_pub -t "TRÅDFRI/bulb/LivingRoomBulb1/control/color" -m warm`
+or subscribe like this:
+`mosquitto_sub -t "TRÅDFRI/room/LivingRoom/state/on"`
