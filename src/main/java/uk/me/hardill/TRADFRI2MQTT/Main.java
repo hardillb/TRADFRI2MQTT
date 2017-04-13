@@ -90,7 +90,7 @@ public class Main {
 					System.out.println(command);
 					try{
 						JSONObject json = new JSONObject();
-						if (bulb) {
+						if (bulb) { // single bulb
 							JSONObject settings = new JSONObject();
 							JSONArray array = new JSONArray();
 							array.put(settings);
@@ -98,6 +98,21 @@ public class Main {
 							if (command.equals("dim")) {
 								settings.put(DIMMER, Integer.parseInt(message.toString()));
 								settings.put(TRANSITION_TIME, 3);	// transition in seconds
+							} else if (command.equals("color")) {
+								// not sure what the COLOR_X and COLOR_Y values do, it works without them...
+								switch (message.toString()) {
+								case "cold":
+									settings.put(COLOR, COLOR_COLD);
+									break;
+								case "normal":
+									settings.put(COLOR, COLOR_NORMAL);
+									break;
+								case "warm":
+									settings.put(COLOR, COLOR_WARM);
+									break;
+								default:
+									System.err.println("Invalid color supplied: " + message.toString());
+								}
 							} else if (command.equals("on")) {
 								if (message.toString().equals("0")) {
 									settings.put(ONOFF, 0);
@@ -107,7 +122,7 @@ public class Main {
 							}
 							String payload = json.toString();
 							Main.this.set("coaps://" + ip + "//" + DEVICES + "/" + id, payload);
-						} else {
+						} else { // whole group
 							if (command.equals("dim")) {
 								json.put(DIMMER, Integer.parseInt(message.toString()));
 								json.put(TRANSITION_TIME, 3);
@@ -237,7 +252,7 @@ public class Main {
 						//TODO change this test to something based on 5750 values
 						// 2 = light?
 						// 0 = remote/dimmer?
-						if (json.has(LIGHT) && (json.has(TYPE) && json.getInt(TYPE) == 2)) {
+						if (json.has(LIGHT) && (json.has(TYPE) && json.getInt(TYPE) == 2)) { // single bulb
 							MqttMessage message = new MqttMessage();
 							// A 'JSONObject["5850"] not found' exception occurs if there is a registered lamp with no power
 							int state;
@@ -247,18 +262,29 @@ public class Main {
 								System.err.println("Bulb '" + json.getString(NAME) + "' has no power on lightbulb socket");
 								return; // skip this lamp for now
 							}
-							message.setPayload(Integer.toString(state).getBytes());
-//							message.setRetained(true);
 							String topic = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/on";
 							String topic2 = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/dim";
+							String topic3 = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/color";
+
 							name2id.put(json.getString(NAME), json.getInt(INSTANCE_ID));
+
+							message.setPayload(Integer.toString(state).getBytes());
+//							message.setRetained(true);
+
 							MqttMessage message2 = new MqttMessage();
 							int dim = json.getJSONArray(LIGHT).getJSONObject(0).getInt(DIMMER);
 							message2.setPayload(Integer.toString(dim).getBytes());
 //							message2.setRetained(true);
+
+							MqttMessage message3 = new MqttMessage();
+							String color = json.getJSONArray(LIGHT).getJSONObject(0).getString(COLOR);
+							message3.setPayload(color.getBytes());
+//							message3.setRetained(true);
+
 							try {
 								mqttClient.publish(topic, message);
 								mqttClient.publish(topic2, message2);
+								mqttClient.publish(topic3, message3);
 							} catch (MqttException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -267,15 +293,18 @@ public class Main {
 							//room?
 							System.out.println("room");
 							name2id.put(json.getString(NAME), json.getInt(INSTANCE_ID));
+
+							String topic = "TRÅDFRI/room/" + json.getString(NAME) + "/state/on";
+							String topic2 = "TRÅDFRI/room/" + json.getString(NAME) + "/state/dim";
+
 							MqttMessage message = new MqttMessage();
 							int state = json.getInt(ONOFF);
 							message.setPayload(Integer.toString(state).getBytes());
-							String topic = "TRÅDFRI/room/" + json.getString(NAME) + "/state/on";
-							String topic2 = "TRÅDFRI/room/" + json.getString(NAME) + "/state/dim";
+
 							MqttMessage message2 = new MqttMessage();
 							int dim = json.getInt(DIMMER);
 							message2.setPayload(Integer.toString(dim).getBytes());
-							
+
 							try {
 								mqttClient.publish(topic, message);
 								mqttClient.publish(topic2, message2);
