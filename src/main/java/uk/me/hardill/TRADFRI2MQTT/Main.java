@@ -96,7 +96,7 @@ public class Main {
 							array.put(settings);
 							json.put(LIGHT, array);
 							if (command.equals("dim")) {
-								settings.put(DIMMER, Integer.parseInt(message.toString()));
+								settings.put(DIMMER, Math.min(DIMMER_MAX, Math.max(DIMMER_MIN, Integer.parseInt(message.toString()))));
 								settings.put(TRANSITION_TIME, 3);	// transition in seconds
 							} else if (command.equals("color")) {
 								// not sure what the COLOR_X and COLOR_Y values do, it works without them...

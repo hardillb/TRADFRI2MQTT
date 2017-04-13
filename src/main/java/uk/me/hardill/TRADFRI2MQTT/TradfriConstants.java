@@ -45,12 +45,13 @@ public class TradfriConstants {
 	public static final String COLOR_WARM_X = "33135";
 	public static final String COLOR_WARM_Y = "27211";
 
+	public static final int DIMMER_MIN = 0;
+	public static final int DIMMER_MAX = 254;
+
 
 
 	// Currently not needed, sorted alphabetically
 	public static final int DEFAULT_DIMMER_TRANSITION_TIME = 5;
-	public static final int DIMMER_MAX = 254;
-	public static final int DIMMER_MIN = 0;
 	public static final int GATEWAY_REBOOT_NOTIFICATION = 1003;
 	public static final int LIGHTS_OFF_SMART_TASK = 2;
 	public static final int LOSS_OF_INTERNET_CONNECTIVITY = 5001;
