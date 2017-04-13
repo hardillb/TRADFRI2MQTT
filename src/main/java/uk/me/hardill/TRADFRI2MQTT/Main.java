@@ -106,7 +106,7 @@ public class Main {
 								}
 							}
 							String payload = json.toString();
-							Main.this.set("coaps://" + ip + "//" + GROUPS + "/" + id, payload);
+							Main.this.set("coaps://" + ip + "//" + DEVICES + "/" + id, payload);
 						} else {
 							if (command.equals("dim")) {
 								json.put(DIMMER, Integer.parseInt(message.toString()));
@@ -185,7 +185,7 @@ public class Main {
 			CoapResponse response = client.get();
 			JSONArray array = new JSONArray(response.getResponseText());
 			for (int i=0; i<array.length(); i++) {
-				String devUri = "coaps://" + ip + "//" + GROUPS + array.getInt(i);
+				String devUri = "coaps://" + ip + "//" + GROUPS + "/" + array.getInt(i);
 				this.watch(devUri);
 			}
 			client.shutdown();
