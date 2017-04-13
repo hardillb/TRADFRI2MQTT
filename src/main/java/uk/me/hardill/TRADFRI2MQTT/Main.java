@@ -98,7 +98,7 @@ public class Main {
 							if (command.equals("dim")) {
 								settings.put(DIMMER, Math.min(DIMMER_MAX, Math.max(DIMMER_MIN, Integer.parseInt(message.toString()))));
 								settings.put(TRANSITION_TIME, 3);	// transition in seconds
-							} else if (command.equals("color")) {
+							} else if (command.equals("temperature")) {
 								// not sure what the COLOR_X and COLOR_Y values do, it works without them...
 								switch (message.toString()) {
 								case "cold":
@@ -111,7 +111,7 @@ public class Main {
 									settings.put(COLOR, COLOR_WARM);
 									break;
 								default:
-									System.err.println("Invalid color supplied: " + message.toString());
+									System.err.println("Invalid temperature supplied: " + message.toString());
 								}
 							} else if (command.equals("on")) {
 								if (message.toString().equals("0")) {
@@ -264,7 +264,7 @@ public class Main {
 							}
 							String topic = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/on";
 							String topic2 = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/dim";
-							String topic3 = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/color";
+							String topic3 = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/temperature";
 
 							name2id.put(json.getString(NAME), json.getInt(INSTANCE_ID));
 
@@ -277,8 +277,8 @@ public class Main {
 //							message2.setRetained(true);
 
 							MqttMessage message3 = new MqttMessage();
-							String color = json.getJSONArray(LIGHT).getJSONObject(0).getString(COLOR);
-							message3.setPayload(color.getBytes());
+							String temperature = json.getJSONArray(LIGHT).getJSONObject(0).getString(COLOR);
+							message3.setPayload(temperature.getBytes());
 //							message3.setRetained(true);
 
 							try {

@@ -10,7 +10,7 @@ Publishes state messages on topics like this:
 
  - TRÅDFRI/bulb/Living Room Light/state/on
  - TRÅDFRI/bulb/Living Room Light/state/dim
- - TRÅDFRI/bulb/Living Room Light/state/color
+ - TRÅDFRI/bulb/Living Room Light/state/temperature
  - TRÅDFRI/room/Living Room/state/on
  - TRÅDFRI/room/Living Room/state/dim
  
@@ -19,7 +19,7 @@ Subscribes to control messages on topics like this:
 
  - TRÅDFRI/bulb/Living Room Light/control/on
  - TRÅDFRI/bulb/Living Room Light/control/dim
- - TRÅDFRI/bulb/Living Room Light/control/color
+ - TRÅDFRI/bulb/Living Room Light/control/temperature
  - TRÅDFRI/room/Living Room/control/on
  - TRÅDFRI/room/Living Room/control/dim
 
@@ -27,7 +27,7 @@ publish 0/1 to the `on` topic to turn the light off/on respectively
 
 publish 0-254 to the `dim` topic to change the brightness
 
-publish "cold" / "normal" / "warm" to the `color` topic to change colors. this only works on bulbs
+publish "cold" / "normal" / "warm" to the `temperature` topic to change temperatures. this only works on bulbs
 
 # MQTT broker example
 An easy-to-use MQTT broker is [mosquitto](https://mosquitto.org/).
@@ -35,6 +35,6 @@ An easy-to-use MQTT broker is [mosquitto](https://mosquitto.org/).
 After installation run it locally with `mosquitto`.
 
 Then submit commands like this:
-`mosquitto_pub -t "TRÅDFRI/bulb/LivingRoomBulb1/control/color" -m warm`
+`mosquitto_pub -t "TRÅDFRI/bulb/LivingRoomBulb1/control/temperature" -m warm`
 or subscribe like this:
 `mosquitto_sub -t "TRÅDFRI/room/LivingRoom/state/on"`
