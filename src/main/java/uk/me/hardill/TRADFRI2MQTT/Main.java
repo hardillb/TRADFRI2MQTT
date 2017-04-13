@@ -234,12 +234,19 @@ public class Main {
 					System.out.println(response.getOptions().toString());
 					try {
 						JSONObject json = new JSONObject(response.getResponseText());
-						//TODO change this test to someting based on 5750 values
+						//TODO change this test to something based on 5750 values
 						// 2 = light?
 						// 0 = remote/dimmer?
-						if (json.has(LIGHT) && (json.has(TYPE) && json.getInt(TYPE) == 2)){
+						if (json.has(LIGHT) && (json.has(TYPE) && json.getInt(TYPE) == 2)) {
 							MqttMessage message = new MqttMessage();
-							int state = json.getJSONArray(LIGHT).getJSONObject(0).getInt(ONOFF);
+							// A 'JSONObject["5850"] not found' exception occurs if there is a registered lamp with no power
+							int state;
+							try {
+								state = json.getJSONArray(LIGHT).getJSONObject(0).getInt(ONOFF);
+							} catch (JSONException e) {
+								System.err.println("Bulb '" + json.getString(NAME) + "' has no power on lightbulb socket");
+								return; // skip this lamp for now
+							}
 							message.setPayload(Integer.toString(state).getBytes());
 //							message.setRetained(true);
 							String topic = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/on";
