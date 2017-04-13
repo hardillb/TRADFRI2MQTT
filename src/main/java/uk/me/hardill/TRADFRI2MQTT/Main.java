@@ -3,6 +3,8 @@
  */
 package uk.me.hardill.TRADFRI2MQTT;
 
+import static uk.me.hardill.TRADFRI2MQTT.TradfriConstants.*;
+
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -92,32 +94,32 @@ public class Main {
 							JSONObject settings = new JSONObject();
 							JSONArray array = new JSONArray();
 							array.put(settings);
-							json.put("3311", array);
+							json.put(LIGHT, array);
 							if (command.equals("dim")) {
-								settings.put("5851", Integer.parseInt(message.toString()));
-								settings.put("5712", 3);	// second transition
+								settings.put(DIMMER, Integer.parseInt(message.toString()));
+								settings.put(TRANSITION_TIME, 3);	// transition in seconds
 							} else if (command.equals("on")) {
 								if (message.toString().equals("0")) {
-									settings.put("5850", 0);
+									settings.put(ONOFF, 0);
 								} else {
-									settings.put("5850", 1);
+									settings.put(ONOFF, 1);
 								}
 							}
 							String payload = json.toString();
-							Main.this.set("coaps://" + ip + "//15001/" + id, payload);
+							Main.this.set("coaps://" + ip + "//" + GROUPS + "/" + id, payload);
 						} else {
 							if (command.equals("dim")) {
-								json.put("5851", Integer.parseInt(message.toString()));
-								json.put("5712", 3);
+								json.put(DIMMER, Integer.parseInt(message.toString()));
+								json.put(TRANSITION_TIME, 3);
 							} else {
 								if (message.toString().equals("0")) {
-									json.put("5850", 0);
+									json.put(ONOFF, 0);
 								} else {
-									json.put("5850", 1);
+									json.put(ONOFF, 1);
 								}
 							}
 							String payload = json.toString();
-							Main.this.set("coaps://" + ip + "//15004/" + id, payload);
+							Main.this.set("coaps://" + ip + "//" + GROUPS + "/" + id, payload);
 						}
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -158,13 +160,13 @@ public class Main {
 	private void discover() {
 		//bulbs
 		try {
-			URI uri = new URI("coaps://" + ip + "//15001");
+			URI uri = new URI("coaps://" + ip + "//" + DEVICES);
 			CoapClient client = new CoapClient(uri);
 			client.setEndpoint(endPoint);
 			CoapResponse response = client.get();
 			JSONArray array = new JSONArray(response.getResponseText());
 			for (int i=0; i<array.length(); i++) {
-				String devUri = "coaps://"+ ip + "//15001/" + array.getInt(i);
+				String devUri = "coaps://" + ip + "//" + DEVICES + "/" + array.getInt(i);
 				this.watch(devUri);
 			}
 			client.shutdown();
@@ -177,13 +179,13 @@ public class Main {
 		}
 		
 		try {
-			URI uri = new URI("coaps://" + ip + "//15004");
+			URI uri = new URI("coaps://" + ip + "//" + GROUPS);
 			CoapClient client = new CoapClient(uri);
 			client.setEndpoint(endPoint);
 			CoapResponse response = client.get();
 			JSONArray array = new JSONArray(response.getResponseText());
 			for (int i=0; i<array.length(); i++) {
-				String devUri = "coaps://"+ ip + "//15004/" + array.getInt(i);
+				String devUri = "coaps://" + ip + "//" + GROUPS + array.getInt(i);
 				this.watch(devUri);
 			}
 			client.shutdown();
@@ -235,16 +237,16 @@ public class Main {
 						//TODO change this test to someting based on 5750 values
 						// 2 = light?
 						// 0 = remote/dimmer?
-						if (json.has("3311") && (json.has("5750") && json.getInt("5750") == 2)){
+						if (json.has(LIGHT) && (json.has(TYPE) && json.getInt(TYPE) == 2)){
 							MqttMessage message = new MqttMessage();
-							int state = json.getJSONArray("3311").getJSONObject(0).getInt("5850");
+							int state = json.getJSONArray(LIGHT).getJSONObject(0).getInt(ONOFF);
 							message.setPayload(Integer.toString(state).getBytes());
 //							message.setRetained(true);
-							String topic = "TRÅDFRI/bulb/" + json.getString("9001") + "/state/on";
-							String topic2 = "TRÅDFRI/bulb/" + json.getString("9001") + "/state/dim";
-							name2id.put(json.getString("9001"), json.getInt("9003"));
+							String topic = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/on";
+							String topic2 = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/dim";
+							name2id.put(json.getString(NAME), json.getInt(INSTANCE_ID));
 							MqttMessage message2 = new MqttMessage();
-							int dim = json.getJSONArray("3311").getJSONObject(0).getInt("5851");
+							int dim = json.getJSONArray(LIGHT).getJSONObject(0).getInt(DIMMER);
 							message2.setPayload(Integer.toString(dim).getBytes());
 //							message2.setRetained(true);
 							try {
@@ -254,17 +256,17 @@ public class Main {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
-						} else if (json.has("9018")) {
+						} else if (json.has(HS_ACCESSORY_LINK)) { // groups have this entry
 							//room?
 							System.out.println("room");
-							name2id.put(json.getString("9001"), json.getInt("9003"));
+							name2id.put(json.getString(NAME), json.getInt(INSTANCE_ID));
 							MqttMessage message = new MqttMessage();
-							int state = json.getInt("5850");
+							int state = json.getInt(ONOFF);
 							message.setPayload(Integer.toString(state).getBytes());
-							String topic = "TRÅDFRI/room/" + json.getString("9001") + "/state/on";
-							String topic2 = "TRÅDFRI/room/" + json.getString("9001") + "/state/dim";
+							String topic = "TRÅDFRI/room/" + json.getString(NAME) + "/state/on";
+							String topic2 = "TRÅDFRI/room/" + json.getString(NAME) + "/state/dim";
 							MqttMessage message2 = new MqttMessage();
-							int dim = json.getInt("5851");
+							int dim = json.getInt(DIMMER);
 							message2.setPayload(Integer.toString(dim).getBytes());
 							
 							try {
