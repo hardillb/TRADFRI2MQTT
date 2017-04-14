@@ -253,28 +253,34 @@ public class Main {
 						// 2 = light?
 						// 0 = remote/dimmer?
 						if (json.has(LIGHT) && (json.has(TYPE) && json.getInt(TYPE) == 2)) { // single bulb
-							MqttMessage message = new MqttMessage();
-							// A 'JSONObject["5850"] not found' exception occurs if there is a registered lamp with no power
-							int state;
-							try {
-								state = json.getJSONArray(LIGHT).getJSONObject(0).getInt(ONOFF);
-							} catch (JSONException e) {
-								System.err.println("Bulb '" + json.getString(NAME) + "' has no power on lightbulb socket");
+
+							JSONObject light = json.getJSONArray(LIGHT).getJSONObject(0);
+
+							if (!light.has(ONOFF)) {
+								System.err.println("Bulb '" + json.getString(NAME) + "' has no On/Off value (probably no power on lightbulb socket)");
 								return; // skip this lamp for now
 							}
+							int state = light.getInt(ONOFF);
 							String topic = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/on";
 							String topic2 = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/dim";
 							String topic3 = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/temperature";
 
-							name2id.put(json.getString(NAME), json.getInt(INSTANCE_ID));
-
+							MqttMessage message = new MqttMessage();
 							message.setPayload(Integer.toString(state).getBytes());
 //							message.setRetained(true);
 
+							if (!light.has(DIMMER)) {
+								System.err.println("Bulb '" + json.getString(NAME) + "' has no dimmer value (probably no power on lightbulb socket)");
+								return; // skip this lamp for now
+							}
 							MqttMessage message2 = new MqttMessage();
 							int dim = json.getJSONArray(LIGHT).getJSONObject(0).getInt(DIMMER);
 							message2.setPayload(Integer.toString(dim).getBytes());
 //							message2.setRetained(true);
+
+							// only add lamp to HashMap if it has both an ONOFF and a DIMMER value
+							// even the bulbs with no support for color temperature support dimming.
+							name2id.put(json.getString(NAME), json.getInt(INSTANCE_ID));
 
 							MqttMessage message3 = null;
 							if (json.getJSONArray(LIGHT).getJSONObject(0).has(COLOR)) {
@@ -282,6 +288,8 @@ public class Main {
 								String temperature = json.getJSONArray(LIGHT).getJSONObject(0).getString(COLOR);
 								message3.setPayload(temperature.getBytes());
 //								message3.setRetained(true);
+							} else { // just fyi for the user. maybe add further handling later
+								System.out.println("Bulb '" + json.getString(NAME) + "' doesn't support color temperature");
 							}
 
 							try {
