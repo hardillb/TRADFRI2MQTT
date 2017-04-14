@@ -269,23 +269,22 @@ public class Main {
 							message.setPayload(Integer.toString(state).getBytes());
 //							message.setRetained(true);
 
-							if (!light.has(DIMMER)) {
-								System.err.println("Bulb '" + json.getString(NAME) + "' has no dimmer value (probably no power on lightbulb socket)");
-								return; // skip this lamp for now
-							}
-							MqttMessage message2 = new MqttMessage();
-							int dim = json.getJSONArray(LIGHT).getJSONObject(0).getInt(DIMMER);
-							message2.setPayload(Integer.toString(dim).getBytes());
-//							message2.setRetained(true);
-
-							// only add lamp to HashMap if it has both an ONOFF and a DIMMER value
-							// even the bulbs with no support for color temperature support dimming.
 							name2id.put(json.getString(NAME), json.getInt(INSTANCE_ID));
 
+							MqttMessage message2 = null;
+							if (light.has(DIMMER)) {
+								message2 = new MqttMessage();
+								int dim = light.getInt(DIMMER);
+								message2.setPayload(Integer.toString(dim).getBytes());
+//								message2.setRetained(true);
+							} else {
+								System.err.println("Bulb '" + json.getString(NAME) + "' has no dimming value (maybe just no power on lightbulb socket)");
+							}
+
 							MqttMessage message3 = null;
-							if (json.getJSONArray(LIGHT).getJSONObject(0).has(COLOR)) {
+							if (light.has(COLOR)) {
 								message3 = new MqttMessage();
-								String temperature = json.getJSONArray(LIGHT).getJSONObject(0).getString(COLOR);
+								String temperature = light.getString(COLOR);
 								message3.setPayload(temperature.getBytes());
 //								message3.setRetained(true);
 							} else { // just fyi for the user. maybe add further handling later
@@ -294,7 +293,9 @@ public class Main {
 
 							try {
 								mqttClient.publish(topic, message);
-								mqttClient.publish(topic2, message2);
+								if (message2 != null) {
+									mqttClient.publish(topic2, message2);
+								}
 								if (message3 != null) {
 									mqttClient.publish(topic3, message3);
 								}
