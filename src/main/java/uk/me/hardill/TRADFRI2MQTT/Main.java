@@ -261,40 +261,49 @@ public class Main {
 						// 2 = light?
 						// 0 = remote/dimmer?
 						if (json.has(LIGHT) && (json.has(TYPE) && json.getInt(TYPE) == 2)) { // single bulb
-							MqttMessage message = new MqttMessage();
-							// A 'JSONObject["5850"] not found' exception occurs if there is a registered lamp with no power
-							int state;
-							try {
-								state = json.getJSONArray(LIGHT).getJSONObject(0).getInt(ONOFF);
-							} catch (JSONException e) {
-								System.err.println("Bulb '" + json.getString(NAME) + "' has no power on lightbulb socket");
+
+							JSONObject light = json.getJSONArray(LIGHT).getJSONObject(0);
+
+							if (!light.has(ONOFF)) {
+								System.err.println("Bulb '" + json.getString(NAME) + "' has no On/Off value (probably no power on lightbulb socket)");
 								return; // skip this lamp for now
 							}
+							int state = light.getInt(ONOFF);
 							String topic = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/on";
 							String topic2 = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/dim";
 							String topic3 = "TRÅDFRI/bulb/" + json.getString(NAME) + "/state/temperature";
 
-							name2id.put(json.getString(NAME), json.getInt(INSTANCE_ID));
-
+							MqttMessage message = new MqttMessage();
 							message.setPayload(Integer.toString(state).getBytes());
 //							message.setRetained(true);
 
-							MqttMessage message2 = new MqttMessage();
-							int dim = json.getJSONArray(LIGHT).getJSONObject(0).getInt(DIMMER);
-							message2.setPayload(Integer.toString(dim).getBytes());
-//							message2.setRetained(true);
+							name2id.put(json.getString(NAME), json.getInt(INSTANCE_ID));
+
+							MqttMessage message2 = null;
+							if (light.has(DIMMER)) {
+								message2 = new MqttMessage();
+								int dim = light.getInt(DIMMER);
+								message2.setPayload(Integer.toString(dim).getBytes());
+//								message2.setRetained(true);
+							} else {
+								System.err.println("Bulb '" + json.getString(NAME) + "' has no dimming value (maybe just no power on lightbulb socket)");
+							}
 
 							MqttMessage message3 = null;
-							if (json.getJSONArray(LIGHT).getJSONObject(0).has(COLOR)) {
+							if (light.has(COLOR)) {
 								message3 = new MqttMessage();
-								String temperature = json.getJSONArray(LIGHT).getJSONObject(0).getString(COLOR);
+								String temperature = light.getString(COLOR);
 								message3.setPayload(temperature.getBytes());
 //								message3.setRetained(true);
+							} else { // just fyi for the user. maybe add further handling later
+								System.out.println("Bulb '" + json.getString(NAME) + "' doesn't support color temperature");
 							}
 
 							try {
 								mqttClient.publish(topic, message);
-								mqttClient.publish(topic2, message2);
+								if (message2 != null) {
+									mqttClient.publish(topic2, message2);
+								}
 								if (message3 != null) {
 									mqttClient.publish(topic3, message3);
 								}
