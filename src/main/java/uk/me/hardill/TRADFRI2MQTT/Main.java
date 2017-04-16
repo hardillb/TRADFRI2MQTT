@@ -179,6 +179,10 @@ public class Main {
 			CoapClient client = new CoapClient(uri);
 			client.setEndpoint(endPoint);
 			CoapResponse response = client.get();
+			if (response == null) {
+				System.out.println("Connection to Gateway timed out, please check ip address or increase the ACK_TIMEOUT in the Californium.properties file");
+				System.exit(-1);
+			}
 			JSONArray array = new JSONArray(response.getResponseText());
 			for (int i=0; i<array.length(); i++) {
 				String devUri = "coaps://" + ip + "//" + DEVICES + "/" + array.getInt(i);
@@ -198,6 +202,10 @@ public class Main {
 			CoapClient client = new CoapClient(uri);
 			client.setEndpoint(endPoint);
 			CoapResponse response = client.get();
+			if (response == null) {
+				System.out.println("Connection to Gateway timed out, please check ip address or increase the ACK_TIMEOUT in the Californium.properties file");
+				System.exit(-1);
+			}
 			JSONArray array = new JSONArray(response.getResponseText());
 			for (int i=0; i<array.length(); i++) {
 				String devUri = "coaps://" + ip + "//" + GROUPS + "/" + array.getInt(i);
