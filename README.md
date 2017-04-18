@@ -38,3 +38,13 @@ Then submit commands like this:
 `mosquitto_pub -t "TRÅDFRI/bulb/LivingRoomBulb1/control/temperature" -m warm`
 or subscribe like this:
 `mosquitto_sub -t "TRÅDFRI/room/LivingRoom/state/on"`
+
+# Installation on Docker
+
+Optionally, TRADFRI2MQTT can be installed and run within a Docker image using the following instructions:
+
+1. Clone this GIT repository.
+2. Build the tradfri2mqtt docker image like so:
+  `docker build -t tradfri2mqtt .`
+3. Run tradfri2mqtt within a docker container:
+  `docker run -rm tradfri2mqtt -ip [gateway ip] -psk [gateway secret] -broker [mqtt broker url]`
