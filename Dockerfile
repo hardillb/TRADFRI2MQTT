@@ -1,2 +1,2 @@
 FROM 		maven:onbuild-alpine
-ENTRYPOINT ["java","-jar","target/TRADFRI2MQTT-0.0.4-SNAPSHOT.jar"]
+ENTRYPOINT ["java","-cp","target/*:target/libs/*","uk.me.hardill.TRADFRI2MQTT.Main"]
