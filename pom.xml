@@ -113,4 +113,9 @@
     	<version>1.4</version>
     </dependency>
   </dependencies>
+  <scm>
+  	<developerConnection>scm:git:git@github.com:hardillb/TRADFRI2MQTT.git</developerConnection>
+  	<url>https://github.com/hardillb/TRADFRI2MQTT</url>
+  	<connection>scm:git:git@github.com:hardillb/TRADFRI2MQTT.git</connection>
+  </scm>
 </project>
