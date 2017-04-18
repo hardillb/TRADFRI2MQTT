@@ -3,7 +3,7 @@
 
   <groupId>uk.me.hardill</groupId>
   <artifactId>TRADFRI2MQTT</artifactId>
-  <version>0.0.5-SNAPSHOT</version>
+  <version>0.0.6-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>TRADFRI2MQTT</name>
@@ -86,6 +86,10 @@
 			</plugin>
         </plugins>
     </build>
+    
+    <distributionManagement>
+    
+    </distributionManagement>
 
   <dependencies>
     <dependency>

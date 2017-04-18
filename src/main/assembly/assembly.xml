@@ -4,24 +4,24 @@
         <format>tar.gz</format>
     </formats>
     <includeBaseDirectory>false</includeBaseDirectory>
-    <dependencySets>
+<!--   <dependencySets>
         <dependencySet>
-            <outputDirectory>/lib</outputDirectory>
+            <outputDirectory>/libs</outputDirectory>
         </dependencySet>
-    </dependencySets>
+    </dependencySets> -->
     <fileSets>
         <fileSet>
             <directory>target</directory>
-            <outputDirectory>/lib</outputDirectory>
+            <outputDirectory>/</outputDirectory>
             <includes>
                 <include>*.jar</include>
             </includes>
         </fileSet>
         <fileSet>
-            <directory>src/main/assembly/scripts</directory>
-            <outputDirectory>/scripts</outputDirectory>
+            <directory>target/libs</directory>
+            <outputDirectory>/libs</outputDirectory>
             <includes>
-                <include>*.sh</include>
+                <include>*.jar</include>
             </includes>
         </fileSet>
     </fileSets>
