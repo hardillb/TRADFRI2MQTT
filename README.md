@@ -1,6 +1,8 @@
 # Invocation
 
-java -jar TRADFRI2MQTT-X.X.X-SNAPSHOT.jar -ip [gateway ip] -psk [gateway secret] -broker [mqtt broker url]
+java -jar TRADFRI2MQTT-X.X.X-SNAPSHOT.jar -ip {gateway IP} -psk {gateway secret} -broker {MQTT broker URL} [-retained]
+
+The optional `-retained` configures the MQTT topics as retained.
 
 e.g.
 
