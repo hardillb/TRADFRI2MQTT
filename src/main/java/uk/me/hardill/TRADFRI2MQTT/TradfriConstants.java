@@ -9,14 +9,17 @@ package uk.me.hardill.TRADFRI2MQTT;
  */
 public class TradfriConstants {
 
-	// Device types (contained in INSTANCE_ID = "9003")
+	// Device types (contained in INSTANCE_ID = "9003" inside of array contained in LIGHT = "3311")
 	public static final int TYPE_REMOTE = 0;
 	public static final int TYPE_BULB = 2;
 	// The others need to be figured out by people who own these
 
 	// Top level navigation
-	public static final String DEVICES = "15001";
-	public static final String GROUPS = "15004";
+	public static final String DEVICES = "15001"; // individual bulbs, remotes, motion sensors, ...
+	public static final String GROUPS = "15004"; // also called rooms
+	public static final String SCENE = "15005"; // also called moods
+	public static final String NOTIFICATIONS = "15006"; // ???
+	public static final String TIMERS = "15010";
 
 	// Values in JSON data
 	public static final String NAME = "9001"; // used in both devices and groups
