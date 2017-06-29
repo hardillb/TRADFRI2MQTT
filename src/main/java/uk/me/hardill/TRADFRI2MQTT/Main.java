@@ -8,8 +8,11 @@ import static uk.me.hardill.TRADFRI2MQTT.TradfriConstants.*;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map.Entry;
 import java.util.Vector;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -48,7 +51,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * @author hardillb
+ * @author hardillb & r41d
  *
  */
 public class Main {
@@ -67,10 +70,13 @@ public class Main {
 	private String ip;
 	private boolean retainedQueues;
 
-	// Switched from name2id to id2name because ID are distinct and names necessarily aren't
-	// IDs of devices shouldn't clash with room IDs, the former are always 5-digit, the latter always 6-digit
-	// Rule of thumb: Good idea to not use the same name for a room and a device
-	private BidiMap<Integer, String> id2name = new DualHashBidiMap<>(); // mapping from gateway IDs to entity display names
+	// mapping: device ID -> device names
+	private BidiMap<Integer, String> id2device = new DualHashBidiMap<>();
+	// mapping: room ID -> room name
+	private BidiMap<Integer, String> id2room = new DualHashBidiMap<>();
+	// mapping room ID -> Mood (ID,Name)
+	// The outer HashMap must not be a BidiMap because it leads to bugs when more than one empty BidiMap is contained as a value
+	private HashMap<Integer, BidiMap<Integer,String>> roomID2moods = new HashMap<>();
 	private Vector<CoapObserveRelation> watching = new Vector<>();
 
 	Main(String psk, String ip, String broker, boolean retained) {
@@ -119,6 +125,7 @@ public class Main {
 									break;
 								default:
 									System.err.println("Invalid OnOff value '" + message.toString() + "'for bulb " + entityName);
+									return;
 								}
 								break;
 							case "dim":
@@ -141,13 +148,15 @@ public class Main {
 									break;
 								default:
 									System.err.println("Invalid temperature supplied: " + message.toString());
+									return;
 								}
 								break;
 							default:
 								System.err.println("Invalid command supplied: " + command);
+								return;
 							}
 							payload = json.toString();
-							Main.this.set("coaps://" + Main.this.ip + "//" + DEVICES + "/" + id2name.getKey(entityName), payload);
+							Main.this.set("coaps://" + Main.this.ip + "//" + DEVICES + "/" + id2device.getKey(entityName), payload);
 							break;
 
 						case "room": // whole room
@@ -160,21 +169,35 @@ public class Main {
 									break;
 								default:
 									System.err.println("Invalid OnOff value '" + message.toString() + "'for room " + entityName);
+									return;
 								}
 								break;
 							case "dim":
 								json.put(DIMMER, Integer.parseInt(message.toString()));
 								json.put(TRANSITION_TIME, 3);
 								break;
+							case "mood":
+								String moodName = message.toString();
+								int roomID = id2room.getKey(entityName);
+								Integer moodID = roomID2moods.get(roomID).getKey(moodName);
+								if (moodID != null) {
+									json.put(SCENE_ID, moodID);
+								} else {
+									System.err.println("Mood " + moodName + " for room " + entityName + " not found");
+									return;
+								}
+								break;
 							default:
 								System.err.println("Invalid command for room: " + command);
+								return;
 							}
 							payload = json.toString();
-							Main.this.set("coaps://" + Main.this.ip + "//" + GROUPS + "/" + id2name.getKey(entityName), payload);
+							Main.this.set("coaps://" + Main.this.ip + "//" + GROUPS + "/" + id2room.getKey(entityName), payload);
 							break;
 
 						default:
 							System.err.println("Invalid entityType: " + entityType);
+							return;
 						}
 
 					} catch (Exception e) {
@@ -225,10 +248,9 @@ public class Main {
 				System.out.println("Connection to Gateway timed out, please check ip address or increase the ACK_TIMEOUT in the Californium.properties file");
 				System.exit(-1);
 			}
-			JSONArray array = new JSONArray(response.getResponseText());
-			for (int i = 0; i < array.length(); i++) {
-				String devUri = "coaps://" + ip + "//" + DEVICES + "/" + array.getInt(i);
-				this.watch(devUri);
+			JSONArray devices = new JSONArray(response.getResponseText());
+			for (int i = 0; i < devices.length(); i++) {
+				this.watch(DEVICES, ""+devices.getInt(i));
 			}
 			client.shutdown();
 		} catch (URISyntaxException e) {
@@ -249,10 +271,9 @@ public class Main {
 				System.out.println("Connection to Gateway timed out, please check ip address or increase the ACK_TIMEOUT in the Californium.properties file");
 				System.exit(-1);
 			}
-			JSONArray array = new JSONArray(response.getResponseText());
-			for (int i = 0; i < array.length(); i++) {
-				String devUri = "coaps://" + ip + "//" + GROUPS + "/" + array.getInt(i);
-				this.watch(devUri);
+			JSONArray rooms = new JSONArray(response.getResponseText());
+			for (int i = 0; i < rooms.length(); i++) {
+				this.watch(GROUPS, "" + rooms.getInt(i));
 			}
 			client.shutdown();
 		} catch (URISyntaxException e) {
@@ -262,6 +283,46 @@ public class Main {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+		// Discover all Moods for all Rooms that were found
+		// Moods are structured as follows: IP:5684/15005/RoomID/MoodID
+		try {
+			URI sceneURI = new URI("coaps://" + ip + "//" + SCENE);
+			CoapClient client = new CoapClient(sceneURI);
+			client.setEndpoint(endPoint);
+			CoapResponse responseRooms = client.get();
+			if (responseRooms == null) {
+				System.out.println("Connection to Gateway timed out, please check ip address or increase the ACK_TIMEOUT in the Californium.properties file");
+				System.exit(-1);
+			}
+			JSONArray moodRooms = new JSONArray(responseRooms.getResponseText());
+			for (int roomIdx = 0; roomIdx < moodRooms.length(); roomIdx++) {
+				int roomID = moodRooms.getInt(roomIdx);
+				// prepare Bidirectional Map for storing the moods for the current room
+				roomID2moods.put(roomID, new DualHashBidiMap<Integer, String>());
+
+				URI moodUri = new URI("coaps://" + ip + "//" + SCENE + "/" + roomID);
+				client = new CoapClient(moodUri);
+				client.setEndpoint(endPoint);
+				CoapResponse responseMoods = client.get();
+				if (responseMoods == null) {
+					System.out.println("Connection to Gateway timed out, please check ip address or increase the ACK_TIMEOUT in the Californium.properties file");
+					System.exit(-1);
+				}
+				JSONArray moodsIDs = new JSONArray(responseMoods.getResponseText());
+				for (int moodIdx = 0; moodIdx < moodsIDs.length(); moodIdx++) {
+					this.watch(SCENE, "" + roomID, "" + moodsIDs.getInt(moodIdx));
+				}
+				client.shutdown();
+			}
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 	}
 
 	private void set(String uriString, String payload) {
@@ -283,12 +344,11 @@ public class Main {
 		}
 	}
 
-	private void watch(String uriString) {
+	private void watch(String realm, final String... path) {
 
 		try {
-			URI uri = new URI(uriString);
-
-			CoapClient client = new CoapClient(uri);
+			String uriString = "coaps://" + ip + "//" + realm + "/" + Arrays.asList(path).stream().collect(Collectors.joining("/"));
+			CoapClient client = new CoapClient(new URI(uriString));
 			client.setEndpoint(endPoint);
 			CoapHandler handler = new CoapHandler() {
 
@@ -298,6 +358,7 @@ public class Main {
 					//System.out.println(response.getOptions().toString());
 					try {
 						JSONObject json = new JSONObject(response.getResponseText());
+						int ID = json.getInt(INSTANCE_ID);
 						String name = json.getString(NAME);
 						// TODO change this test to something based on 5750 values
 						// 2 = light?
@@ -309,7 +370,7 @@ public class Main {
 							} catch (JSONException e) {}
 							System.out.println("Processing" + socket + " Bulb " + name + " " + response.getResponseText());
 
-							id2name.put(json.getInt(INSTANCE_ID), name);
+							id2device.put(ID, name);
 
 							JSONObject light = json.getJSONArray(LIGHT).getJSONObject(0);
 
@@ -340,6 +401,7 @@ public class Main {
 								mqttClient.publish(topicBulbDim, messageBulbDim);
 							} else {
 								System.err.println("Bulb '" + name + "' has no dimming value (maybe just no power on lightbulb socket)");
+								// no dim topic is created for this bulb
 							}
 
 							MqttMessage messageBulbTemp = null;
@@ -363,10 +425,10 @@ public class Main {
 							List<String> lampNames = new ArrayList<>();
 							if (lamps != null)
 								for (int i = 0; i < lamps.length(); i++)
-									lampNames.add(id2name.get(lamps.getInt(i)));
+									lampNames.add(id2device.get(lamps.getInt(i)));
 							String ll = " (" + lampNames.stream().collect(Collectors.joining(" ")) + ")";
 							System.out.println("Processing Room " + name + ll + " " + response.getResponseText());
-							id2name.put(json.getInt(INSTANCE_ID), name);
+							id2room.put(json.getInt(INSTANCE_ID), name);
 
 							String topicRoomOnOff = "TRÅDFRI/room/" + name + "/state/on";
 							String topicRoomDim = "TRÅDFRI/room/" + name + "/state/dim";
@@ -387,10 +449,14 @@ public class Main {
 							}
 							mqttClient.publish(topicRoomDim, messageRoomDim);
 
+						} else if (json.has(IKEA_MOODS)) {
+							System.out.println("Processing Mood " + name + " for Room ID " + path[0] + " " + response.getResponseText());
+							// Store Mood in database
+							roomID2moods.get(Integer.parseInt(path[0])).put(ID, name);
 						} else if (json.has(TYPE) && json.getInt(TYPE) == TYPE_REMOTE) {
-							// save this to internal list, even though it's not used yet
-							id2name.put(json.getInt(INSTANCE_ID), name);
 							System.out.println("Processing Remote " + name + " " + response.getResponseText());
+							// save this to device list, even though it's not used yet
+							id2device.put(json.getInt(INSTANCE_ID), name);
 						} else {
 							System.out.println("Got entity '" + name + "' that is neither bulb, group or remote..." + " " + response.getResponseText());
 						}
@@ -409,7 +475,7 @@ public class Main {
 
 				@Override
 				public void onError() {
-					System.out.println("CoAP request timed out or has been rejected by the server.");
+					System.out.println("CoAP request timed out or was rejected by the server.");
 				}
 			};
 			CoapObserveRelation relation = client.observe(handler);
