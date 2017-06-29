@@ -11,3 +11,6 @@ buildNumber.properties
 !/.mvn/wrapper/maven-wrapper.jar
 
 Californium.properties
+.classpath
+.project
+.settings
