@@ -366,7 +366,10 @@ public class Main {
 						if (json.has(TYPE) && json.getInt(TYPE) == TYPE_BULB && json.has(LIGHT)) { // single bulb
 							String socket = "";
 							try {
-								socket = " " + json.getJSONObject("3").getString("1").split(" ")[2];
+								socket = " " + json.getJSONObject("3").getString("1");
+								if (socket.startsWith(" TRADFRI bulb ")) {
+									socket = " " + socket.split(" ")[3];
+								}
 							} catch (JSONException e) {}
 							System.out.println("Processing" + socket + " Bulb " + name + " " + response.getResponseText());
 
