@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package uk.me.hardill.TRADFRI2MQTT;
 
@@ -45,6 +45,7 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -90,7 +91,10 @@ public class Main {
 		MemoryPersistence persistence = new MemoryPersistence();
 		try {
 			mqttClient = new MqttClient(broker, MqttClient.generateClientId(), persistence);
-			mqttClient.connect();
+			MqttConnectOptions opts = new MqttConnectOptions();
+			opts.setMaxInflight(200);
+			opts.setAutomaticReconnect(true);
+			mqttClient.connect(opts);
 			mqttClient.setCallback(new MqttCallback() {
 
 				@Override
@@ -490,7 +494,7 @@ public class Main {
 
 	/**
 	 * @param args
-	 * @throws InterruptedException 
+	 * @throws InterruptedException
 	 */
 	public static void main(String[] args) throws InterruptedException {
 		Options options = new Options();
