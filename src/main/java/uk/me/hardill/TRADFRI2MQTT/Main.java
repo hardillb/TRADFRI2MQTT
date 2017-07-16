@@ -371,7 +371,7 @@ public class Main {
 							String socket = "";
 							try {
 								socket = " " + json.getJSONObject("3").getString("1");
-								if (socket.startsWith(" TRADFRI bulb ")) {
+								if (socket.startsWith("TRADFRI bulb ")) {
 									socket = " " + socket.split(" ")[3];
 								}
 							} catch (JSONException e) {}
