@@ -495,7 +495,7 @@ public class Main {
 	}
 
 	/**
-	 * @param args
+	 * @param args Command line arguments
 	 * @throws InterruptedException
 	 */
 	public static void main(String[] args) throws InterruptedException {
