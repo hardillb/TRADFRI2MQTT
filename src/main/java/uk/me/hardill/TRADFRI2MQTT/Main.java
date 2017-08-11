@@ -51,7 +51,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * @author hardillb & r41d
+ * @author hardillb &amp; r41d
  *
  */
 public class Main {
