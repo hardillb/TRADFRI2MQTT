@@ -12,7 +12,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Map.Entry;
 import java.util.Vector;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -504,7 +503,8 @@ public class Main {
 		options.addOption("psk", true, "The Secret on the base of the gateway");
 		options.addOption("ip", true, "The IP address of the gateway");
 		options.addOption("broker", true, "MQTT URL");
-		options.addOption("retained", true, "Topics are retained");
+		options.addOption("retained", "Topics are retained");
+		options.addOption("help", "Shows this usage information");
 
 		CommandLineParser parser = new DefaultParser();
 		CommandLine cmd = null;
@@ -518,15 +518,16 @@ public class Main {
 		String psk = cmd.getOptionValue("psk");
 		String ip = cmd.getOptionValue("ip");
 		String broker = cmd.getOptionValue("broker");
-		String retained = cmd.getOptionValue("retained");
+		boolean retained = cmd.hasOption("retained");
+		boolean help = cmd.hasOption("help");
 
-		if (psk == null || ip == null || broker == null) {
+		if (help || psk == null || ip == null || broker == null) {
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp("TRADFRI2MQTT", options);
 			System.exit(1);
 		}
 
-		Main m = new Main(psk, ip, broker, retained != null);
+		Main m = new Main(psk, ip, broker, retained);
 		m.discover();
 	}
 
