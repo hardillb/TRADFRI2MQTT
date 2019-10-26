@@ -26,6 +26,7 @@ public class TradfriConstants {
 	public static final String INSTANCE_ID = "9003"; // In devices: device ID. In groups: list of device IDs
 	public static final String HS_ACCESSORY_LINK = "9018"; // Groups have this entry
 	public static final String IKEA_MOODS = "9068"; // Moods have this entry
+	public static final String IKEA_IDENTITY = "9090"; // Request new client PSK
 	public static final String LIGHT = "3311"; // urn:oma:lwm2m:ext:3311 in LwM2M registry
 	public static final String TYPE = "5750"; // "Application Type" in LwM2M registry
 	public static final String ONOFF = "5850"; // "On/Off" in LwM2M registry

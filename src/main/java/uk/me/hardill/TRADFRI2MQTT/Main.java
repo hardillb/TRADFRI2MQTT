@@ -195,6 +195,7 @@ public class Main {
 								return;
 							}
 							payload = json.toString();
+							System.err.println(payload);
 							Main.this.set("coaps://" + Main.this.ip + "//" + GROUPS + "/" + id2room.getKey(entityName), payload);
 							break;
 
